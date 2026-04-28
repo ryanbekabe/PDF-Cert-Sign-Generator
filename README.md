@@ -42,6 +42,8 @@ python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --tsa http
 
 python sign_pdf.py -i 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf -o 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.signed3tsr.pdf -c cert.p12 -p password --tsa http://freetsa.org/tsr --reason "Approval" --location "Palangka Raya" --name "Riyan Hidayat Samosir"
 
+python sign_pdf.py -i Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf -o Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf.signed.pdf -c cert.p12 -p password --tsa http://freetsa.org/tsr --reason "Brosur layanan HanyaJasa.Com" --location "Palangka Raya" --name "Riyan Hidayat Samosir"
+
 ```
 
 Optional, atur posisi visible signature box (koordinat PDF):
