@@ -11,3 +11,4 @@ env/
 signed_*.pdf
 .idea/
 .vscode/
+tmp/

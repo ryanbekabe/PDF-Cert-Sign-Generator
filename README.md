@@ -66,6 +66,21 @@ TSA URL umum yang gratis/publik:
 - `http://timestamp.digicert.com`
 - `http://timestamp.sectigo.com`
 
+### Bangun TSA Sendiri
+
+Anda juga bisa menjalankan TSA lokal/internal sendiri di Linux atau WSL. Lihat panduan [cara_setup_TSA.md](cara_setup_TSA.md) dan script otomatis [setup_tsa.sh](setup_tsa.sh):
+
+```
+chmod +x setup_tsa.sh
+./setup_tsa.sh
+```
+
+Setelah selesai, gunakan endpoint TSA lokal:
+
+```
+python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --tsa http://localhost:8080/
+```
+
 ### 3. Verify signed PDF
 
 ```
