@@ -35,12 +35,12 @@ python generate_cert.py -o cert.p12 -p password --cn "Riyan Hidayat Samosir" --o
 ```
 python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --reason "Approval" --location "Jakarta" --name "Nama Anda"
 
-python sign_pdf.py -i 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf -o 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener_signed.pdf -c cert.p12 -p password --reason "Approval" --location "Palangka Raya" --name "Riyan Hidayat Samosir"
+python sign_pdf.py -i Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf -o 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener_signed.pdf -c cert.p12 -p password --reason "Approval" --location "Palangka Raya" --name "Riyan Hidayat Samosir"
 
 
 python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --tsa http://freetsa.org/tsr --reason "Approval" --location "Palangka Raya" --name "Riyan Hidayat Samosir"
 
-python sign_pdf.py -i 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf -o 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.signed3tsr.pdf -c cert.p12 -p password --tsa http://freetsa.org/tsr --reason "Approval" --location "Palangka Raya" --name "Riyan Hidayat Samosir"
+python sign_pdf.py -i Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf -o 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.signed3tsr.pdf -c cert.p12 -p password --tsa http://freetsa.org/tsr --reason "Approval" --location "Palangka Raya" --name "Riyan Hidayat Samosir"
 
 python sign_pdf.py -i Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf -o Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf.signed.pdf -c cert.p12 -p password --tsa http://freetsa.org/tsr --reason "Brosur layanan HanyaJasa.Com" --location "Palangka Raya" --name "Riyan Hidayat Samosir"
 
@@ -51,7 +51,7 @@ Optional, atur posisi visible signature box (koordinat PDF):
 ```
 python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --box 50 50 250 120
 
-python sign_pdf.py -i 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf -o 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf2_signed.pdf -c cert.p12 -p password --box 50 50 250 120
+python sign_pdf.py -i Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf -o Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf2_signed.pdf -c cert.p12 -p password --box 50 50 250 120
 
 ```
 
@@ -88,7 +88,7 @@ python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --tsa http
 ```
 python verify_pdf.py -i signed.pdf
 
-python verify_pdf.py -i 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf2_signed.pdf
+python verify_pdf.py -i Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf2_signed.pdf
 
 ```
 

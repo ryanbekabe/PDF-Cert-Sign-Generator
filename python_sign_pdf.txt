@@ -54,3 +54,12 @@ curl: (7) Failed to connect to 127.0.0.1 port 8080 after 0 ms: Connection refuse
 CATATAN: Root CA ini self-signed. Viewer pihak ketiga
 tidak akan trust kecuali root CA Anda di-import ke trust store
 mereka. Lihat cara_setup_TSA.md untuk detail.
+
+python3 sign_pdf.py -i Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf -o Brosur_Server_Non_ID_HanyaJasa.Com_2026.signedfrom203coid.pdf -c cert.p
+12 -p password --tsa http://server203.rsipalangkaraya.co.id:8080/
+Signed PDF saved to /home/rsi/gitproject/PDF-Cert-Sign-Generator/Brosur_Server_Non_ID_HanyaJasa.Com_2026.signedfrom203coid.pdf
+Timestamp authority used: http://server203.rsipalangkaraya.co.id:8080/
+
+python3 sign_pdf.py -i Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf -o Brosur_Server_Non_ID_HanyaJasa.Com_2026.signedfrom203.pdf -c cert.p12 -p password --tsa http://192.168.88.203:8080/
+Signed PDF saved to /home/rsi/gitproject/PDF-Cert-Sign-Generator/Brosur_Server_Non_ID_HanyaJasa.Com_2026.signedfrom203.pdf
+Timestamp authority used: http://192.168.88.203:8080/
