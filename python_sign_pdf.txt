@@ -1,0 +1,56 @@
+python sign_pdf.py -i Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf -o Brosur_Server_Non_ID_HanyaJasa.Com_2026.signedfrom203.pdf -c cert.p12 -p password --tsa http://192.168.88.203:8080/
+
+
+root@rsipalangkaraya:~# ./setup_tsa.sh
+[*] MyTSA setup dimulai (TSA_HOME=/root/myTSA, port=8080)
+[*] Menyiapkan struktur direktori di /root/myTSA ...
+[OK] Struktur direktori siap.
+[*] Generate Root CA (RSA 4096, 3650 hari)...
+[OK] Root CA dibuat: /root/myTSA/ca/certs/cacert.pem
+[*] Generate TSA signer cert (RSA 2048, 1825 hari)...
+[OK] TSA signer cert dibuat: /root/myTSA/ca/tsa/tsacert.pem
+[*] Self-test TSA secara lokal...
+[OK] Self-test sukses.
+[*] Menulis tsa_server.py ...
+[OK] HTTP server: /root/myTSA/tsa_server.py
+[*] Memasang systemd service 'mytsa' ...
+Created symlink /etc/systemd/system/multi-user.target.wants/mytsa.service → /etc/systemd/system/mytsa.service.
+[OK] Service 'mytsa' aktif.
+[*] HTTP smoke test ke http://127.0.0.1:8080/ ...
+curl: (7) Failed to connect to 127.0.0.1 port 8080 after 0 ms: Connection refused
+[!] HTTP smoke test gagal — server mungkin belum siap.
+
+========================================================
+  MyTSA setup selesai
+========================================================
+
+  TSA_HOME    : /root/myTSA
+  Endpoint    : http://192.168.88.203:8080/
+                (lokal: http://127.0.0.1:8080/)
+  Root CA     : /root/myTSA/ca/certs/cacert.pem
+  TSA cert    : /root/myTSA/ca/tsa/tsacert.pem
+
+  Pakai dari klien (PDF-Cert-Sign-Generator):
+    python sign_pdf.py -i input.pdf -o signed.pdf \
+        -c cert.p12 -p password \
+        --tsa http://192.168.88.203:8080/
+
+  Manajemen service (kalau systemd terpasang):
+    sudo systemctl status  mytsa
+    sudo systemctl restart mytsa
+    sudo journalctl -u mytsa -f
+
+  Verifikasi manual:
+    cd /root/myTSA
+    echo hi > /tmp/d.txt
+    openssl ts -query -data /tmp/d.txt -sha256 -cert -out /tmp/r.tsq
+    curl -H "Content-Type: application/timestamp-query" \
+         --data-binary @/tmp/r.tsq \
+         http://127.0.0.1:8080/ -o /tmp/r.tsr
+    openssl ts -verify -in /tmp/r.tsr -queryfile /tmp/r.tsq \
+         -CAfile    /root/myTSA/ca/certs/cacert.pem \
+         -untrusted /root/myTSA/ca/tsa/tsacert.pem
+
+CATATAN: Root CA ini self-signed. Viewer pihak ketiga
+tidak akan trust kecuali root CA Anda di-import ke trust store
+mereka. Lihat cara_setup_TSA.md untuk detail.
