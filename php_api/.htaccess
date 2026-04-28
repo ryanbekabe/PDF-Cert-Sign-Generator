@@ -1,0 +1,37 @@
+# Pretty URL untuk Apache. Untuk Nginx, lihat contoh di akhir file.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Lewatkan request ke file/direktori yang benar-benar ada (test.html, dst).
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Sisanya diarahkan ke front controller.
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+# Cegah akses langsung ke file sensitif walau sudah di luar webroot.
+<FilesMatch "(?i)\.(p12|pfx|pem|key|env|log)$">
+    Require all denied
+</FilesMatch>
+
+<Files "config.php">
+    Require all denied
+</Files>
+
+# Naikkan limit upload bila perlu (sesuaikan dengan max_upload_mb di config.php).
+# php_value upload_max_filesize 50M
+# php_value post_max_size       55M
+
+# Contoh konfigurasi Nginx (untuk referensi, taruh di server block):
+#
+# location /sign-api/ {
+#     try_files $uri $uri/ /sign-api/index.php?$query_string;
+# }
+# location ~ \.php$ {
+#     include fastcgi_params;
+#     fastcgi_pass unix:/run/php/php-fpm.sock;
+#     fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+# }

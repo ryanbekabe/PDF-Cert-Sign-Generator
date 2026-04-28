@@ -264,3 +264,167 @@ TSA Anda akan self-trusted — sama seperti self-signed cert signing-nya, viewer
 Gunakan untuk: internal organization, testing, development, archival internal, riset.
 Jangan gunakan untuk: dokumen kontrak/legal lintas-organisasi, signing yang harus lulus PAdES-LTV publik, atau setiap kasus yang membutuhkan trust chain ke root yang diakui (Adobe AATL, EUTL, KOMDIGI PSrE, dsb.).
 Mau saya bantu buatkan script setup otomatis (setup_tsa.sh) yang menjalankan semua langkah di atas dalam satu perintah?
+
+
+-=-=-
+
+which php php-cgi 2>/dev/null; php -v 2>/dev/null | head -1
+PHP 7.4 ada — bagus. Saya akan buatkan REST API di subdirektori php_api/ dengan struktur:
+
+php_api/index.php — router + handler endpoint
+php_api/config.php — config (path cert, password, TSA, dll)
+php_api/.htaccess — pretty URL untuk Apache
+php_api/test.html — form HTML untuk uji coba
+API mendukung: POST /sign (multipart upload) → balikan PDF tertandatangani sebagai binary download. Bisa juga override reason, location, contact, name, tsa lewat form field.
+
+Sekarang saya verifikasi syntax PHP-nya dan jalankan smoke test.
+
+Bash Check PHP syntax of new files
+
+php -l /home/rsi/gitproject/PDF-Cert-Sign-Generator/php_api/index.php && php -l /home/rsi/gitproject/PDF-Cert-Sign-Generator/php_api/config.php
+
+php -S 127.0.0.1:8765 -t php_api php_api/index.php > /tmp/php_api_test.log 2>&1 &
+echo "started PID=$!"
+sleep 1
+curl -s http://127.0.0.1:8765/ | head -30
+echo "---"
+curl -s http://127.0.0.1:8765/health
+
+started PID=3442614
+{
+    "name": "PDF Cert Sign Generator API",
+    "version": "1.0.0",
+    "endpoints": {
+        "GET /": "Info API ini",
+        "GET /health": "Cek kesiapan service",
+        "POST /sign": "Tanda tangani PDF (multipart, field \"pdf\")"
+    },
+    "example_curl": "curl -F \"pdf=@input.pdf\" -o signed.pdf http://127.0.0.1:8765/sign"
+}---
+{
+    "status": "ok",
+    "checks": {
+        "python_bin": true,
+        "sign_script": true,
+        "cert_path": true,
+        "work_dir": true
+    },
+    "tsa": "http://192.168.88.203:8080/"
+}
+
+Sekarang uji POST /sign dengan PDF yang ada — TSA saya nonaktifkan dulu karena tidak yakin host 192.168.88.203 bisa dijangkau dari sini.
+
+Bash Smoke test POST /sign with sample PDF (TSA disabled)
+
+cd /home/rsi/gitproject/PDF-Cert-Sign-Generator
+curl -sS -o /tmp/signed_via_api.pdf -w "HTTP=%{http_code} TYPE=%{content_type} SIZE=%{size_download}\n" \
+  -F "pdf=@Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf" \
+  -F "tsa=" \
+  -F "name=Riyan Hidayat Samosir" \
+  -F "location=Palangka Raya" \
+  -F "reason=API smoke test" \
+  http://127.0.0.1:8765/sign
+ls -la /tmp/signed_via_api.pdf
+file /tmp/signed_via_api.pdf
+
+HTTP=500 TYPE=application/json; charset=utf-8 SIZE=270
+-rw-rw-r-- 1 rsi rsi 270 Apr 28 13:29 /tmp/signed_via_api.pdf
+/tmp/signed_via_api.pdf: JSON data
+
+cat /tmp/signed_via_api.pdf
+
+{
+    "error": "sign_failed",
+    "return_code": -1,
+    "stdout": "Signed PDF saved to /home/rsi/gitproject/PDF-Cert-Sign-Generator/php_api/tmp/out_396a2f23f8d9e88f.pdf\nNote: no TSA used — signing time will be local-only and not authenticated.\n",
+    "stderr": ""
+}
+
+Process keluar sukses (file output sudah dibuat), tapi proc_close return -1 karena status sudah direap oleh proc_get_status. Saya perbaiki cara ambil exit code.
+
+Hint stylistik dari IDE — tidak memengaruhi fungsi. Saya lanjutkan smoke test untuk verifikasi fix run_command.
+
+Bash Re-test POST /sign after fix
+
+cd /home/rsi/gitproject/PDF-Cert-Sign-Generator
+curl -sS -o /tmp/signed_via_api.pdf -w "HTTP=%{http_code} TYPE=%{content_type} SIZE=%{size_download}\n" \
+  -F "pdf=@Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf" \
+  -F "tsa=" \
+  -F "name=Riyan Hidayat Samosir" \
+  -F "location=Palangka Raya" \
+  -F "reason=API smoke test" \
+  http://127.0.0.1:8765/sign
+file /tmp/signed_via_api.pdf
+ls -la /tmp/signed_via_api.pdf
+
+HTTP=200 TYPE=application/pdf SIZE=99659
+/tmp/signed_via_api.pdf: PDF document, version 1.4, 2 pages
+-rw-rw-r-- 1 rsi rsi 99659 Apr 28 13:30 /tmp/signed_via_api.pdf
+
+End-to-end OK: HTTP 200, valid PDF 2 halaman, 99659 byte. Cepat uji mode JSON juga, lalu matikan server.
+
+Bash Test JSON response mode and stop dev server
+
+cd /home/rsi/gitproject/PDF-Cert-Sign-Generator
+curl -sS -F "pdf=@Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf" -F "tsa=" -F "format=json" \
+  http://127.0.0.1:8765/sign | head -c 250
+echo
+echo "---"
+# matikan dev server
+kill 3442614 2>/dev/null && echo "server stopped"
+
+{
+    "status": "signed",
+    "filename": "Brosur_Server_Non_ID_HanyaJasa.Com_2026.signed.pdf",
+    "size": 98610,
+    "tsa": "",
+    "reason": "Document approval",
+    "location": "Indonesia",
+    "name": "PDF Signer",
+    "pdf_base64": "JVBERi0xLjQcurl: (23) Failure writing output to destination
+
+---
+server stopped
+
+Semua endpoint berjalan:
+
+GET / → info API
+GET /health → status python_bin / sign_script / cert_path / work_dir
+POST /sign → upload PDF, dapat PDF tertandatangani
+Cara menjalankan
+Built-in PHP server (cepat, untuk dev/test):
+
+
+cd /home/rsi/gitproject/PDF-Cert-Sign-Generator
+php -S 0.0.0.0:8765 -t php_api php_api/index.php
+Lalu buka di browser: http://<ip>:8765/test.html untuk form uji coba, atau langsung:
+
+
+curl -F "pdf=@Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf" \
+     -o signed.pdf \
+     http://127.0.0.1:8765/sign
+Sama persis dengan command CLI yang Anda jalankan — semua opsi (cert, password, TSA) dibaca dari php_api/config.php. TSA default http://192.168.88.203:8080/ sudah saya isi sesuai contoh Anda.
+
+Production (Apache): taruh project di webroot, lalu akses http://server/php_api/sign. .htaccess sudah disertakan untuk pretty URL & memblokir akses ke config.php dan file .p12/.pem/.key.
+
+Field POST yang didukung di /sign
+
+
+Field	Tipe	Default
+pdf	file	wajib
+reason, location, contact, name	text	dari config.php
+tsa	text	dari config; kirim string kosong → no TSA
+box	text "x1,y1,x2,y2"	50,50,250,120
+format	binary (default) atau json (PDF di-base64-kan)	binary
+
+File yang dibuat
+php_api/index.php — router + handler (+proc_open dengan timeout)
+php_api/config.php — semua konfigurasi (cert, password, TSA, batas upload, API key opsional, CORS opsional)
+php_api/.htaccess — pretty URL + proteksi file sensitif (Apache); contoh Nginx ada di komentar
+php_api/test.html — form HTML untuk upload manual
+Catatan keamanan
+Password sertifikat ada di config.php. Saya sarankan: chmod 600 php_api/config.php.
+API key opsional: tinggal isi array api_keys di config, klien lalu kirim header X-API-Key: ....
+File upload: divalidasi magic byte %PDF-, ada batas ukuran (max_upload_mb), nama file disanitasi sebelum jadi nama download.
+Semua argumen ke python lewat escapeshellarg, tidak ada shell injection.
+

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <title>PDF Sign API — Test Form</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+        h1 { font-size: 1.4rem; }
+        label { display: block; margin-top: .8rem; font-weight: 600; }
+        input[type=text], input[type=file] { width: 100%; padding: .5rem; box-sizing: border-box; }
+        button { margin-top: 1rem; padding: .6rem 1.2rem; font-size: 1rem; cursor: pointer; }
+        .row { display: flex; gap: .8rem; }
+        .row > div { flex: 1; }
+        #status { margin-top: 1rem; padding: .8rem; border-radius: 4px; white-space: pre-wrap; }
+        .ok  { background: #e6ffed; color: #036; }
+        .err { background: #ffe6e6; color: #800; }
+    </style>
+</head>
+<body>
+<h1>PDF Sign API — Test Form</h1>
+<p>Pilih sebuah PDF, lalu klik <em>Sign</em>. PDF tertandatangani akan otomatis ter-download.</p>
+
+<form id="signForm">
+    <label>PDF <input type="file" name="pdf" accept="application/pdf" required></label>
+
+    <div class="row">
+        <div><label>Reason  <input type="text" name="reason"   placeholder="Document approval"></label></div>
+        <div><label>Location<input type="text" name="location" placeholder="Indonesia"></label></div>
+    </div>
+    <div class="row">
+        <div><label>Name    <input type="text" name="name"     placeholder="PDF Signer"></label></div>
+        <div><label>Contact <input type="text" name="contact"  placeholder="signer@example.com"></label></div>
+    </div>
+
+    <label>TSA URL (kosongkan untuk pakai default config; isi "-" untuk no-TSA)
+        <input type="text" name="tsa" placeholder="http://192.168.88.203:8080/">
+    </label>
+
+    <label>API Key (jika config.php mengaktifkan auth)
+        <input type="text" name="api_key" placeholder="opsional">
+    </label>
+
+    <button type="submit">Sign</button>
+</form>
+
+<div id="status"></div>
+
+<script>
+const form   = document.getElementById('signForm');
+const status = document.getElementById('status');
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    status.className = '';
+    status.textContent = 'Mengirim...';
+
+    const fd = new FormData(form);
+
+    // konvensi UI: isi "-" pada TSA untuk menonaktifkannya
+    if (fd.get('tsa') === '-') fd.set('tsa', '');
+
+    const apiKey = fd.get('api_key');
+    fd.delete('api_key');
+
+    try {
+        const headers = {};
+        if (apiKey) headers['X-API-Key'] = apiKey;
+
+        const res = await fetch('sign', { method: 'POST', body: fd, headers });
+
+        if (!res.ok) {
+            const errText = await res.text();
+            status.className = 'err';
+            status.textContent = 'Gagal (' + res.status + '):\n' + errText;
+            return;
+        }
+
+        const blob = await res.blob();
+        const cd   = res.headers.get('Content-Disposition') || '';
+        const m    = cd.match(/filename="?([^"]+)"?/);
+        const name = m ? m[1] : 'signed.pdf';
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+
+        status.className = 'ok';
+        status.textContent = 'Sukses. File tersimpan sebagai: ' + name;
+    } catch (err) {
+        status.className = 'err';
+        status.textContent = 'Network error: ' + err.message;
+    }
+});
+</script>
+</body>
+</html>
