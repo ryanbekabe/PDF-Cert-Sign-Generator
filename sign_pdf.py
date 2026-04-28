@@ -15,7 +15,18 @@ def load_p12(path, password):
     return key, cert, extra_certs or []
 
 
-def sign(input_pdf, output_pdf, p12_path, password, reason, location, contact, name, signature_box):
+def sign(
+    input_pdf,
+    output_pdf,
+    p12_path,
+    password,
+    reason,
+    location,
+    contact,
+    name,
+    signature_box,
+    tsa_url=None,
+):
     key, cert, extra_certs = load_p12(p12_path, password)
 
     date = datetime.datetime.now(datetime.timezone.utc).strftime("D:%Y%m%d%H%M%S+00'00'")
@@ -33,10 +44,20 @@ def sign(input_pdf, output_pdf, p12_path, password, reason, location, contact, n
         "location": location,
         "reason": reason,
         "signingdate": date,
+        "aligned": 16384 if tsa_url else 0,
     }
 
     pdf_bytes = Path(input_pdf).read_bytes()
-    signature = cms.sign(pdf_bytes, dct, key, cert, extra_certs, "sha256")
+    signature = cms.sign(
+        pdf_bytes,
+        dct,
+        key,
+        cert,
+        extra_certs,
+        "sha256",
+        None,
+        tsa_url,
+    )
 
     out_path = Path(output_pdf)
     with out_path.open("wb") as fp:
@@ -44,6 +65,10 @@ def sign(input_pdf, output_pdf, p12_path, password, reason, location, contact, n
         fp.write(signature)
 
     print(f"Signed PDF saved to {out_path.resolve()}")
+    if tsa_url:
+        print(f"Timestamp authority used: {tsa_url}")
+    else:
+        print("Note: no TSA used — signing time will be local-only and not authenticated.")
 
 
 def main():
@@ -64,6 +89,15 @@ def main():
         metavar=("X1", "Y1", "X2", "Y2"),
         help="Signature visible box coordinates",
     )
+    parser.add_argument(
+        "--tsa",
+        default=None,
+        help=(
+            "Optional TSA (Time Stamp Authority) URL to embed an authenticated timestamp. "
+            "Examples: http://timestamp.digicert.com, http://timestamp.sectigo.com, "
+            "http://freetsa.org/tsr"
+        ),
+    )
     args = parser.parse_args()
 
     sign(
@@ -76,6 +110,7 @@ def main():
         args.contact,
         args.name,
         tuple(args.box),
+        args.tsa,
     )
 
 

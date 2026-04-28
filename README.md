@@ -37,6 +37,11 @@ python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --reason "
 
 python sign_pdf.py -i 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf -o 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener_signed.pdf -c cert.p12 -p password --reason "Approval" --location "Palangka Raya" --name "Riyan Hidayat Samosir"
 
+
+python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --tsa http://freetsa.org/tsr --reason "Approval" --location "Palangka Raya" --name "Riyan Hidayat Samosir"
+
+python sign_pdf.py -i 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf -o 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.signed3tsr.pdf -c cert.p12 -p password --tsa http://freetsa.org/tsr --reason "Approval" --location "Palangka Raya" --name "Riyan Hidayat Samosir"
+
 ```
 
 Optional, atur posisi visible signature box (koordinat PDF):
@@ -47,6 +52,19 @@ python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --box 50 5
 python sign_pdf.py -i 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf -o 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf2_signed.pdf -c cert.p12 -p password --box 50 50 250 120
 
 ```
+
+Optional, sertakan **TSA timestamp** agar field "Ditandatangani pada" dan "Penanda waktu" terisi dengan waktu yang authenticated (bukan dari clock lokal). Tanpa TSA, viewer biasanya menampilkan "false (local)" karena waktu hanya berasal dari `/M` lokal:
+
+```
+python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --tsa http://freetsa.org/tsr
+
+python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --tsa http://timestamp.digicert.com
+```
+
+TSA URL umum yang gratis/publik:
+- `http://freetsa.org/tsr`
+- `http://timestamp.digicert.com`
+- `http://timestamp.sectigo.com`
 
 ### 3. Verify signed PDF
 
