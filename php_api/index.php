@@ -35,12 +35,23 @@ if (PHP_SAPI === 'cli-server') {
 apply_cors($config);
 
 // --- Routing ------------------------------------------------------------
-$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-$path = '/' . trim((string)$path, '/');
-$base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
-if ($base !== '' && $base !== '/' && strpos($path, $base) === 0) {
-    $path = substr($path, strlen($base));
-    $path = '/' . ltrim($path, '/');
+// Mendukung 3 bentuk URL agar tetap jalan dengan / tanpa rewrite Apache:
+//   1) /php_api/sign            (mod_rewrite aktif)
+//   2) /php_api/index.php/sign  (PathInfo, tanpa rewrite)
+//   3) /php_api/index.php?p=/sign (query string, fallback terakhir)
+$path = (string)parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$path = '/' . ltrim($path, '/');
+$script = (string)($_SERVER['SCRIPT_NAME'] ?? '');
+$scriptDir = rtrim(str_replace('\\', '/', dirname($script)), '/');
+foreach ([$script, $scriptDir] as $prefix) {
+    if ($prefix !== '' && $prefix !== '/' && strpos($path, $prefix) === 0) {
+        $path = substr($path, strlen($prefix));
+        break;
+    }
+}
+$path = '/' . ltrim((string)$path, '/');
+if ($path === '/' && !empty($_GET['p'])) {
+    $path = '/' . ltrim((string)$_GET['p'], '/');
 }
 if ($path === '') {
     $path = '/';

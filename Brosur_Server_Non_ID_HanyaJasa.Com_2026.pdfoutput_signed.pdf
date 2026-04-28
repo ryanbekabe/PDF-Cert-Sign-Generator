@@ -1,9 +1,6 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-<html><head>
-<title>404 Not Found</title>
-</head><body>
-<h1>Not Found</h1>
-<p>The requested URL was not found on this server.</p>
-<hr>
-<address>Apache/2.4.52 (Ubuntu) Server at server203.rsipalangkaraya.co.id Port 443</address>
-</body></html>
+{
+    "error": "sign_failed",
+    "return_code": 2,
+    "stdout": "",
+    "stderr": "/usr/bin/python3: can't open file '/var/www/html/2026/sign_pdf.py': [Errno 2] No such file or directory\n"
+}

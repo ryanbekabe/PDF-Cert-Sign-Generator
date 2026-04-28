@@ -1,7 +1,17 @@
 # Pretty URL untuk Apache. Untuk Nginx, lihat contoh di akhir file.
+#
+# CATATAN: agar .htaccess ini dieksekusi, di Apache vhost / apache2.conf
+# direktori project harus punya  AllowOverride All  (atau minimal FileInfo).
+# Modul mod_rewrite juga harus aktif:
+#   sudo a2enmod rewrite && sudo systemctl reload apache2
+#
+# Kalau tidak bisa mengubah konfigurasi Apache, pakai URL PathInfo sebagai
+# fallback — index.php sudah mendukung kedua bentuk URL:
+#   pretty:   https://host/php_api/sign
+#   pathinfo: https://host/php_api/index.php/sign
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /
 
     # Lewatkan request ke file/direktori yang benar-benar ada (test.html, dst).
     RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -9,6 +19,9 @@
     RewriteRule ^ - [L]
 
     # Sisanya diarahkan ke front controller.
+    # Tanpa RewriteBase: substitusi `index.php` dianggap relatif terhadap
+    # direktori .htaccess ini, jadi tetap jalan walau di-deploy di sub-path
+    # apa pun (mis. /php_api/, /api/, /pdf-sign/).
     RewriteRule ^(.*)$ index.php [QSA,L]
 </IfModule>
 

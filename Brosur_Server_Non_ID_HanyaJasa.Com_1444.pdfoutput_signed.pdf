@@ -1,0 +1,6 @@
+{
+    "error": "sign_failed",
+    "return_code": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/var/www/html/2026/sign_pdf.py\", line 118, in <module>\n    main()\n  File \"/var/www/html/2026/sign_pdf.py\", line 103, in main\n    sign(\n  File \"/var/www/html/2026/sign_pdf.py\", line 30, in sign\n    key, cert, extra_certs = load_p12(p12_path, password)\n  File \"/var/www/html/2026/sign_pdf.py\", line 11, in load_p12\n    data = Path(path).read_bytes()\n  File \"/usr/lib/python3.10/pathlib.py\", line 1126, in read_bytes\n    with self.open(mode='rb') as f:\n  File \"/usr/lib/python3.10/pathlib.py\", line 1119, in open\n    return self._accessor.open(self, mode, buffering, encoding, errors,\nFileNotFoundError: [Errno 2] No such file or directory: '/var/www/html/2026/cert.p12'\n"
+}

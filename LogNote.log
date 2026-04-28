@@ -428,3 +428,8 @@ API key opsional: tinggal isi array api_keys di config, klien lalu kirim header 
 File upload: divalidasi magic byte %PDF-, ada batas ukuran (max_upload_mb), nama file disanitasi sebelum jadi nama download.
 Semua argumen ke python lewat escapeshellarg, tidak ada shell injection.
 
+pip install --upgrade pip wheel  # kadang wheel binary tersedia di versi pip baru
+pip install -r requirements.txt
+
+curl -F "pdf=@Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf"      -o Brosur_Server_Non_ID_HanyaJasa.Com_1447.pdfoutput_signed.pdf      https://server203.rsipalangkaraya.co.id/php_api/index.php/sign
+

@@ -1,0 +1,6 @@
+{
+    "error": "sign_failed",
+    "return_code": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last):\n  File \"/var/www/html/2026/sign_pdf.py\", line 7, in <module>\n    from endesive.pdf import cms\nModuleNotFoundError: No module named 'endesive'\n"
+}
