@@ -1,0 +1,266 @@
+
+
+-=-=-
+Penjelasan mengenai http://freetsa.org/tsr:
+
+Kenapa pakai FreeTSA?
+http://freetsa.org/tsr bukan satu-satunya pilihan — ini hanya salah satu TSA publik yang gratis dan terbuka. Saya merekomendasikan karena:
+
+Gratis & tanpa registrasi — banyak TSA komersial (DigiCert, Sectigo, GlobalSign) memerlukan kontrak/lisensi atau membatasi rate untuk traffic gratis.
+Tidak ada batasan pemakaian dan tidak butuh API key.
+Open-source — sertifikat root, intermediate, dan source script-nya tersedia publik di freetsa.org.
+Alternatif TSA publik lain yang bisa dipakai:
+
+TSA URL	Keterangan
+http://freetsa.org/tsr	Gratis, dijalankan oleh Kanton (Swiss).
+http://timestamp.digicert.com	Komersial besar, gratis untuk pemakaian non-abusive.
+http://timestamp.sectigo.com	Sebelumnya Comodo.
+http://timestamp.apple.com/ts01	Untuk codesigning Apple.
+http://tsa.starfieldtech.com	GoDaddy/Starfield.
+Apa algoritma/protokol di balik TSA?
+TSA berbasis standar RFC 3161 — Time-Stamp Protocol (TSP), bagian dari PKIX. Alurnya:
+
+
+Client (signer)                              TSA Server
+     │                                            │
+     │  1. Hash dokumen (SHA-256/384/512)         │
+     │     dari signature CMS                     │
+     │                                            │
+     │  2. Bungkus jadi TimeStampReq (ASN.1/DER) ─┼──► HTTP POST
+     │     Content-Type: application/timestamp-query
+     │                                            │
+     │                                            │  3. TSA cek request
+     │                                            │  4. Tambahkan UTC time
+     │                                            │     dari clock yang disinkron
+     │                                            │     (biasanya NTP/atomic).
+     │                                            │  5. Bangun TSTInfo:
+     │                                            │     { hashAlgo, messageImprint,
+     │                                            │       serialNumber, genTime,
+     │                                            │       accuracy, nonce, ... }
+     │                                            │  6. Tandatangani TSTInfo
+     │                                            │     dengan private key TSA
+     │                                            │     menjadi CMS SignedData
+     │                                            │     (PKCS #7).
+     │  ◄──────────── TimeStampResp ──────────────┤
+     │     Content-Type: application/timestamp-reply
+     │                                            │
+     │  7. Embed token ke unsigned attribute      │
+     │     `id-aa-timeStampToken` (OID            │
+     │     1.2.840.113549.1.9.16.2.14)            │
+     │     pada CMS signature di PDF.             │
+     │                                            │
+Komponen kriptografi:
+
+Hash function: SHA-256 (default modern), SHA-384, SHA-512.
+Format pesan: ASN.1 DER encoding (RFC 3161 → TimeStampReq / TimeStampResp).
+Signing: TSA menandatangani dengan private key (RSA-SHA256 atau ECDSA) dan menyertakan certificate chain miliknya. TSA cert harus punya Extended Key Usage id-kp-timeStamping (OID 1.3.6.1.5.5.7.3.8).
+Container: Token TSA berupa CMS / PKCS #7 SignedData yang isinya TSTInfo (RFC 3161 §2.4.2).
+Software yang menjalankan FreeTSA
+FreeTSA dibangun di atas tooling open-source standar Linux:
+
+Komponen	Fungsi
+OpenSSL ts module (openssl ts -reply)	Inti TSA — implementasi RFC 3161, memproses TimeStampReq dan menghasilkan signed token.
+Apache HTTPD + CGI/PHP	Front-end HTTP yang menerima POST request application/timestamp-query lalu meneruskan ke OpenSSL.
+NTP / chrony	Menyinkronkan clock OS ke stratum-1 NTP server (kunci akurasi waktu).
+OpenSSL CA	Mengeluarkan self-issued root + intermediate + TSA leaf cert dengan EKU timestamping.
+Konfigurasi TSA di OpenSSL pada dasarnya berupa openssl.cnf section [ tsa ] + [ tsa_config1 ] yang menyebutkan signer cert, private key, default policy OID, hash algorithm yang diizinkan, dll. Source dan howto FreeTSA tersedia di github.com/kakwa/easy-tsa dan dokumentasi freetsa.org.
+
+Kenapa ini penting?
+Tanpa TSA, waktu tanda tangan hanya dari clock lokal komputer signer — bisa dibohongi (set tanggal mundur). Dengan TSA:
+
+Waktu dijamin oleh pihak ketiga lewat tanda tangan kriptografi.
+Mendukung LTV (Long-Term Validation) — signature tetap valid setelah cert signer expired, karena waktu signing tercatat saat cert masih valid.
+Memenuhi standar PAdES-T / PAdES-LTV (ETSI EN 319 142) yang dibutuhkan di Eropa, dan praktik serupa untuk regulasi PSrE Indonesia.
+
+-=-=-=Cara Membuat Timestamp Authority Sendiri di Ubuntu (Mirip FreeTSA)=-=-=
+
+Ya, bisa. FreeTSA pada dasarnya hanya OpenSSL + web server + NTP. Anda dapat membangunnya sendiri di Ubuntu (server atau WSL) dalam waktu kurang dari 30 menit. Berikut panduan lengkapnya:
+
+Yang Anda butuhkan
+Komponen	Paket
+Engine TSA	openssl (sudah ada di Ubuntu)
+Web front-end	nginx / apache2 / FastCGI / atau script Python sederhana
+Sinkron waktu	chrony atau systemd-timesyncd
+(Opsional) Reverse proxy + HTTPS	nginx + certbot
+
+sudo apt update
+sudo apt install -y openssl nginx fcgiwrap chrony
+sudo systemctl enable --now chrony
+Langkah 1 — Bikin CA + TSA certificate
+
+mkdir -p ~/myTSA && cd ~/myTSA
+mkdir -p ca/{certs,crl,newcerts,private,tsa}
+chmod 700 ca/private
+touch ca/index.txt
+echo 1000 > ca/serial
+echo 1000 > ca/tsaserial
+Buat file ca/openssl.cnf:
+
+
+[ ca ]
+default_ca = CA_default
+
+[ CA_default ]
+dir              = ./ca
+certs            = $dir/certs
+new_certs_dir    = $dir/newcerts
+database         = $dir/index.txt
+serial           = $dir/serial
+private_key      = $dir/private/cakey.pem
+certificate      = $dir/certs/cacert.pem
+default_md       = sha256
+default_days     = 3650
+policy           = policy_any
+
+[ policy_any ]
+countryName            = optional
+stateOrProvinceName    = optional
+organizationName       = optional
+organizationalUnitName = optional
+commonName             = supplied
+emailAddress           = optional
+
+[ req ]
+default_bits       = 4096
+default_md         = sha256
+distinguished_name = req_dn
+prompt             = no
+
+[ req_dn ]
+C  = ID
+O  = MyTSA
+CN = MyTSA Root CA
+
+[ v3_ca ]
+basicConstraints = critical, CA:TRUE
+keyUsage = critical, keyCertSign, cRLSign
+subjectKeyIdentifier = hash
+
+[ v3_tsa ]
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, digitalSignature, nonRepudiation
+extendedKeyUsage = critical, timeStamping
+subjectKeyIdentifier = hash
+
+[ tsa ]
+default_tsa = tsa_config1
+
+[ tsa_config1 ]
+dir              = ./ca
+serial           = $dir/tsaserial
+crypto_device    = builtin
+signer_cert      = $dir/tsa/tsacert.pem
+certs            = $dir/certs/cacert.pem
+signer_key       = $dir/tsa/tsakey.pem
+signer_digest    = sha256
+default_policy   = 1.2.3.4.1
+other_policies   = 1.2.3.4.5.6, 1.2.3.4.5.7
+digests          = sha256, sha384, sha512
+accuracy         = secs:1, millisecs:500, microsecs:100
+clock_precision_digits = 0
+ordering         = yes
+tsa_name         = yes
+ess_cert_id_chain = no
+ess_cert_id_alg  = sha256
+Generate Root CA:
+
+
+openssl req -new -x509 -newkey rsa:4096 -nodes \
+  -keyout ca/private/cakey.pem \
+  -out ca/certs/cacert.pem \
+  -days 3650 -extensions v3_ca \
+  -config ca/openssl.cnf
+Generate TSA signer cert:
+
+
+openssl req -new -newkey rsa:2048 -nodes \
+  -keyout ca/tsa/tsakey.pem \
+  -out ca/tsa/tsa.csr \
+  -subj "/C=ID/O=MyTSA/CN=MyTSA Time-Stamp Authority"
+
+openssl ca -batch \
+  -config ca/openssl.cnf \
+  -extensions v3_tsa \
+  -days 1825 \
+  -in ca/tsa/tsa.csr \
+  -out ca/tsa/tsacert.pem
+Langkah 2 — Test TSA secara lokal (tanpa HTTP)
+
+# Buat request (hash atas file apa saja)
+echo "hello" > test.txt
+openssl ts -query -data test.txt -sha256 -cert -out test.tsq
+
+# Proses request menjadi reply
+openssl ts -reply -config ca/openssl.cnf \
+  -queryfile test.tsq -out test.tsr
+
+# Verifikasi
+openssl ts -verify -in test.tsr -queryfile test.tsq \
+  -CAfile ca/certs/cacert.pem -untrusted ca/tsa/tsacert.pem
+# → "Verification: OK"
+Kalau Verification: OK, engine TSA sudah jalan.
+
+Langkah 3 — Bungkus jadi HTTP endpoint
+Cara paling sederhana adalah Python WSGI/HTTP server kecil. Buat tsa_server.py:
+
+
+import subprocess, tempfile, os
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+CONFIG = "/home/USER/myTSA/ca/openssl.cnf"
+WORKDIR = "/home/USER/myTSA"
+
+class TSAHandler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        if self.headers.get("Content-Type") != "application/timestamp-query":
+            self.send_error(415); return
+        length = int(self.headers.get("Content-Length", 0))
+        tsq = self.rfile.read(length)
+        with tempfile.TemporaryDirectory() as td:
+            qpath = os.path.join(td, "req.tsq")
+            rpath = os.path.join(td, "rep.tsr")
+            open(qpath, "wb").write(tsq)
+            r = subprocess.run(
+                ["openssl", "ts", "-reply", "-config", CONFIG,
+                 "-queryfile", qpath, "-out", rpath],
+                cwd=WORKDIR, capture_output=True)
+            if r.returncode != 0:
+                self.send_error(500, r.stderr.decode()); return
+            tsr = open(rpath, "rb").read()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/timestamp-reply")
+        self.send_header("Content-Length", str(len(tsr)))
+        self.end_headers()
+        self.wfile.write(tsr)
+
+if __name__ == "__main__":
+    HTTPServer(("0.0.0.0", 8080), TSAHandler).serve_forever()
+Jalankan:
+
+
+python3 tsa_server.py
+Test dari mesin lain:
+
+
+curl -H "Content-Type: application/timestamp-query" \
+  --data-binary @test.tsq http://<server-ip>:8080/ \
+  -o test.tsr
+Langkah 4 — Pakai dengan project Python kita
+
+python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password \
+    --tsa http://<server-ip>:8080/
+Untuk WSL, dari Windows pakai --tsa http://localhost:8080/ setelah set port forwarding (atau langsung pakai IP WSL).
+
+Langkah 5 — Production hardening (opsional)
+Concern	Solusi
+HTTPS	Reverse proxy nginx + Let's Encrypt (certbot)
+Akurasi waktu	chronyc tracking — pastikan offset < 50ms ke stratum 1/2
+Auto-restart	systemd unit untuk tsa_server.py
+Auditability	Aktifkan database = ca/index.txt log dan rotasi
+Rate limiting	nginx limit_req_zone
+HSM	OpenSSL engine (Yubico HSM2, SoftHSM, dsb.) untuk simpan TSA private key
+⚠️ Catatan penting
+TSA Anda akan self-trusted — sama seperti self-signed cert signing-nya, viewer di mana pun (termasuk Adobe Reader / portal PSrE Indonesia) tidak akan mempercayai TSA Anda kecuali root CA-nya diinstall di trust store. Jadi untuk dokumen yang diserahkan ke pihak ketiga, ini tidak menggantikan TSA publik tepercaya.
+Gunakan untuk: internal organization, testing, development, archival internal, riset.
+Jangan gunakan untuk: dokumen kontrak/legal lintas-organisasi, signing yang harus lulus PAdES-LTV publik, atau setiap kasus yang membutuhkan trust chain ke root yang diakui (Adobe AATL, EUTL, KOMDIGI PSrE, dsb.).
+Mau saya bantu buatkan script setup otomatis (setup_tsa.sh) yang menjalankan semua langkah di atas dalam satu perintah?
