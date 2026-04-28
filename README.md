@@ -1,4 +1,9 @@
 # PDF-Cert-Sign-Generator
+
+Project ini berisi program untuk menggenerate signature file PDF menggunakan bahasa pemrograman Python.
+
+## Setup Repository
+
 ```
 echo "# PDF-Cert-Sign-Generator" >> README.md
 git init
