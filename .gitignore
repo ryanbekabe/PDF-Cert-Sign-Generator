@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.p12
+*.pfx
+*.key
+*.pem
+signed_*.pdf
+.idea/
+.vscode/
