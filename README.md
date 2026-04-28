@@ -25,24 +25,36 @@ pip install -r requirements.txt
 
 ```
 python generate_cert.py -o cert.p12 -p password --cn "Nama Anda" --org "Organisasi" --country ID --email email@example.com --days 365
+
+python generate_cert.py -o cert.p12 -p password --cn "Riyan Hidayat Samosir" --org "HanyaJasa.Com Org" --country ID --email hanyajasa@gmail.com --days 365
+
 ```
 
 ### 2. Sign a PDF
 
 ```
 python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --reason "Approval" --location "Jakarta" --name "Nama Anda"
+
+python sign_pdf.py -i 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf -o 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener_signed.pdf -c cert.p12 -p password --reason "Approval" --location "Palangka Raya" --name "Riyan Hidayat Samosir"
+
 ```
 
 Optional, atur posisi visible signature box (koordinat PDF):
 
 ```
 python sign_pdf.py -i input.pdf -o signed.pdf -c cert.p12 -p password --box 50 50 250 120
+
+python sign_pdf.py -i 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf -o 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf2_signed.pdf -c cert.p12 -p password --box 50 50 250 120
+
 ```
 
 ### 3. Verify signed PDF
 
 ```
 python verify_pdf.py -i signed.pdf
+
+python verify_pdf.py -i 202604071034-MTsN-4-Bener-Meriah-Jln-Desa-Bener-Mulie-Bener.pdf2_signed.pdf
+
 ```
 
 ## Setup Repository
