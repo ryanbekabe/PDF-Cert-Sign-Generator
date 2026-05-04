@@ -102,4 +102,7 @@ git commit -m "first commit"
 git branch -M main
 git remote add origin https://github.com/ryanbekabe/PDF-Cert-Sign-Generator.git
 git push -u origin main
+
+curl -F "pdf=@Brosur_Server_Non_ID_HanyaJasa.Com_2026_mei.pdf" -o Brosur_Server_Non_ID_HanyaJasa.Com_1447.pdfoutput_signed.pdf  https://server203.rsipalangkaraya.co.id/php_a
+pi/index.php/sign
 ```
