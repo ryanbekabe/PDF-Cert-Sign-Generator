@@ -1,0 +1,68 @@
+# OpenSSL config untuk MyTSA — di-generate oleh setup_tsa.sh
+[ ca ]
+default_ca = CA_default
+
+[ CA_default ]
+dir              = /root/myTSA/ca
+certs            = $dir/certs
+new_certs_dir    = $dir/newcerts
+database         = $dir/index.txt
+serial           = $dir/serial
+private_key      = $dir/private/cakey.pem
+certificate      = $dir/certs/cacert.pem
+default_md       = sha256
+default_days     = 3650
+policy           = policy_any
+unique_subject   = no
+copy_extensions  = none
+
+[ policy_any ]
+countryName            = optional
+stateOrProvinceName    = optional
+organizationName       = optional
+organizationalUnitName = optional
+commonName             = supplied
+emailAddress           = optional
+
+[ req ]
+default_bits       = 4096
+default_md         = sha256
+distinguished_name = req_dn
+prompt             = no
+
+[ req_dn ]
+C  = ID
+O  = MyTSA
+CN = MyTSA Root CA
+
+[ v3_ca ]
+basicConstraints     = critical, CA:TRUE
+keyUsage             = critical, keyCertSign, cRLSign
+subjectKeyIdentifier = hash
+
+[ v3_tsa ]
+basicConstraints     = critical, CA:FALSE
+keyUsage             = critical, digitalSignature, nonRepudiation
+extendedKeyUsage     = critical, timeStamping
+subjectKeyIdentifier = hash
+
+[ tsa ]
+default_tsa = tsa_config1
+
+[ tsa_config1 ]
+dir                = /root/myTSA/ca
+serial             = $dir/tsaserial
+crypto_device      = builtin
+signer_cert        = $dir/tsa/tsacert.pem
+certs              = $dir/certs/cacert.pem
+signer_key         = $dir/tsa/tsakey.pem
+signer_digest      = sha256
+default_policy     = 1.2.3.4.1
+other_policies     = 1.2.3.4.5.6, 1.2.3.4.5.7
+digests            = sha256, sha384, sha512
+accuracy           = secs:1, millisecs:500, microsecs:100
+clock_precision_digits = 0
+ordering           = yes
+tsa_name           = yes
+ess_cert_id_chain  = no
+ess_cert_id_alg    = sha256

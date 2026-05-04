@@ -168,6 +168,10 @@ function handle_sign(array $config): void
         send_json(['error' => 'invalid_format', 'allowed' => ['binary', 'json']], 400);
     }
 
+    // Default: tanda tangan invisible (tanpa widget visual di halaman).
+    // Klien bisa minta widget visible dengan mengirim `visible=1` (atau `true`).
+    $visible = filter_var($_POST['visible'] ?? '0', FILTER_VALIDATE_BOOLEAN);
+
     if (!ensure_work_dir($config['work_dir'])) {
         send_json(['error' => 'work_dir_unwritable', 'path' => $config['work_dir']], 500);
     }
@@ -181,7 +185,7 @@ function handle_sign(array $config): void
     }
 
     try {
-        $cmd = build_sign_command($config, $inputPath, $outputPath, $reason, $location, $contact, $name, $box, $tsa);
+        $cmd = build_sign_command($config, $inputPath, $outputPath, $reason, $location, $contact, $name, $box, $tsa, $visible);
         [$exitCode, $stdout, $stderr] = run_command($cmd, (int)$config['sign_timeout']);
 
         if ($exitCode !== 0 || !is_file($outputPath) || filesize($outputPath) === 0) {
@@ -235,7 +239,8 @@ function build_sign_command(
     string $contact,
     string $name,
     array $box,
-    string $tsa
+    string $tsa,
+    bool $visible
 ): string {
     $parts = [
         escapeshellarg($config['python_bin']),
@@ -257,6 +262,9 @@ function build_sign_command(
     if ($tsa !== '') {
         $parts[] = '--tsa';
         $parts[] = escapeshellarg($tsa);
+    }
+    if (!$visible) {
+        $parts[] = '--invisible';
     }
     return implode(' ', $parts);
 }

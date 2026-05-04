@@ -433,3 +433,6 @@ pip install -r requirements.txt
 
 curl -F "pdf=@Brosur_Server_Non_ID_HanyaJasa.Com_2026.pdf"      -o Brosur_Server_Non_ID_HanyaJasa.Com_1447.pdfoutput_signed.pdf      https://server203.rsipalangkaraya.co.id/php_api/index.php/sign
 
+curl -F "pdf=@Brosur_Server_Non_ID_HanyaJasa.Com_2026_mei.pdf" -F "visible=0" -o Brosur_Server_Non_ID_HanyaJasa.Com_2026_mei.signed1425.pdf https://server203.rsipalangkaraya.co.id/php_api/index.
+php/sign
+

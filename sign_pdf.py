@@ -26,6 +26,7 @@ def sign(
     name,
     signature_box,
     tsa_url=None,
+    invisible=False,
 ):
     key, cert, extra_certs = load_p12(p12_path, password)
 
@@ -34,18 +35,21 @@ def sign(
         "sigflags": 3,
         "sigflagsft": 132,
         "sigpage": 0,
-        "sigbutton": True,
         "sigfield": "Signature1",
         "auto_sigfield": True,
         "sigandcertify": True,
-        "signaturebox": signature_box,
-        "signature": name,
         "contact": contact,
         "location": location,
         "reason": reason,
         "signingdate": date,
         "aligned": 16384 if tsa_url else 0,
     }
+    if invisible:
+        dct["sigbutton"] = False
+    else:
+        dct["sigbutton"] = True
+        dct["signaturebox"] = signature_box
+        dct["signature"] = name
 
     pdf_bytes = Path(input_pdf).read_bytes()
     signature = cms.sign(
@@ -98,6 +102,12 @@ def main():
             "http://freetsa.org/tsr"
         ),
     )
+    parser.add_argument(
+        "--invisible",
+        action="store_true",
+        help="Buat tanda tangan invisible: tidak ada widget/teks di halaman PDF, "
+             "tapi tanda tangan kriptografi tetap melekat dan dapat diverifikasi.",
+    )
     args = parser.parse_args()
 
     sign(
@@ -111,6 +121,7 @@ def main():
         args.name,
         tuple(args.box),
         args.tsa,
+        invisible=args.invisible,
     )
 
 

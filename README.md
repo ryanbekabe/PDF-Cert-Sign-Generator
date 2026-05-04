@@ -105,4 +105,20 @@ git push -u origin main
 
 curl -F "pdf=@Brosur_Server_Non_ID_HanyaJasa.Com_2026_mei.pdf" -o Brosur_Server_Non_ID_HanyaJasa.Com_1447.pdfoutput_signed.pdf  https://server203.rsipalangkaraya.co.id/php_a
 pi/index.php/sign
+
+
+netstat -tlpn
+tcp  0  0 0.0.0.0:8080  0.0.0.0:*  LISTEN  1407/python3
+
+ps -fp 1407
+UID          PID    PPID  C STIME TTY          TIME CMD
+root        1407       1  0 Apr30 ?        00:00:42 /usr/bin/python3 /root/myTSA/tsa_server.py
+
+ps auxww | grep 1407
+root        1407  0.0  0.0 325360 16196 ?        Ss   Apr30   0:42 /usr/bin/python3 /root/myTSA/tsa_server.py
+root     3952255  0.0  0.0   9224  2316 pts/1    S+   14:03   0:00 grep --color=auto 1407
+
+curl -F "pdf=@Brosur_Server_Non_ID_HanyaJasa.Com_2026_mei.pdf" -F "visible=0" -o Brosur_Server_Non_ID_HanyaJasa.Com_2026_mei.signed1425.pdf https://server203.rsipalangkaraya.co.id/php_api/index.
+php/sign
+
 ```
